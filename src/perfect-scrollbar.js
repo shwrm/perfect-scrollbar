@@ -729,6 +729,8 @@
         $this.data('perfect-scrollbar', $this);
         $this.data('perfect-scrollbar-update', updateGeometry);
         $this.data('perfect-scrollbar-destroy', destroy);
+
+        $(window).on('resize', typeof $.debounce === "function" ? $.debounce(250,function(){$this.perfectScrollbar('update');}) : function(){$this.perfectScrollbar('update');} );
       }
 
       initialize();
