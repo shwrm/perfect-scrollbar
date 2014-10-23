@@ -544,9 +544,11 @@
         var speed = {};
         var breakingProcess = null;
         var inGlobalTouch = false;
+        var inLocalTouch = false;
 
         function globalTouchStart(e) {
-          inGlobalTouch = true;
+          if (!inLocalTouch)
+            inGlobalTouch = true;
         }
         function globalTouchEnd(e) {
           inGlobalTouch = false;
@@ -561,6 +563,11 @@
           }
         }
         function touchStart(e) {
+
+          inLocalTouch = true;
+          // reset speed
+          speed = {};
+          
           var touch = getTouch(e);
 
           startOffset.pageX = touch.pageX;
@@ -572,8 +579,6 @@
             clearInterval(breakingProcess);
           }
 
-          e.stopPropagation();
-          e.preventDefault();
         }
         function touchMove(e) {
           if (!inGlobalTouch && e.originalEvent.targetTouches.length === 1) {
@@ -601,18 +606,37 @@
           }
         }
         function touchEnd(e) {
+
+          inLocalTouch = false;
+
           clearInterval(breakingProcess);
-          breakingProcess = setInterval(function () {
-            if (Math.abs(speed.x) < 0.01 && Math.abs(speed.y) < 0.01) {
-              clearInterval(breakingProcess);
-              return;
-            }
+          // if speed.x is undefined == there was no touchmove == no need for breaking
+          if (speed.x) {
+            breakingProcess = setInterval(function () {
+              if (Math.abs(speed.x) < 0.01 && Math.abs(speed.y) < 0.01) {
+                clearInterval(breakingProcess);
+                return;
+              }
 
-            applyTouchMove(speed.x * 30, speed.y * 30);
+              applyTouchMove(speed.x * 30, speed.y * 30);
 
-            speed.x *= 0.8;
-            speed.y *= 0.8;
-          }, 10);
+              speed.x *= 0.8;
+              speed.y *= 0.8;
+            }, 10);
+          }
+        }
+
+        /**
+         * Checks whether the element was scrolled and click event should be cancelled.
+         *
+         * This fixes the bug where child elements received click events after the element was scrolled by touch (after the touchEnd event).
+         * We listen to the click event in the capture phase and cancel it if the element was moved, so that it doesn't reach the child elements.
+         */
+        function checkIfCancelClick(e) {
+          if (speed.x) {
+            e.stopPropagation();
+            e.preventDefault();
+          }
         }
 
         if (supportsTouch) {
@@ -621,6 +645,8 @@
           $this.bind("touchstart" + eventClassName, touchStart);
           $this.bind("touchmove" + eventClassName, touchMove);
           $this.bind("touchend" + eventClassName, touchEnd);
+
+          $this[0].addEventListener("click", checkIfCancelClick, true);
         }
 
         if (supportsIePointer) {
