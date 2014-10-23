@@ -6,8 +6,7 @@ module.exports = function (grunt) {
   grunt.initConfig({
     // Metadata.
     pkg: grunt.file.readJSON('perfect-scrollbar.jquery.json'),
-    version: grunt.file.readJSON('package.json').version,
-    banner: '/*! <%= pkg.title || pkg.name %> - v<%= version %>\n' +
+    banner: '/*! <%= pkg.title || pkg.name %> - v<%= pkg.version %>\n' +
       '<%= pkg.homepage ? "* " + pkg.homepage + "\\n" : "" %>' +
       '* Copyright (c) <%= grunt.template.today("yyyy") %> <%= pkg.author.name %>;' +
       ' Licensed <%= _.pluck(pkg.licenses, "type").join(", ") %> */\n',
@@ -21,11 +20,7 @@ module.exports = function (grunt) {
       },
       min: {
         files: {
-          'min/perfect-scrollbar.min.js': ['src/perfect-scrollbar.js'],
-          'min/perfect-scrollbar.with-mousewheel.min.js': [
-            'src/perfect-scrollbar.js',
-            'src/jquery.mousewheel.js'
-          ]
+          'min/perfect-scrollbar.min.js': ['src/perfect-scrollbar.js']
         }
       }
     },
@@ -63,6 +58,15 @@ module.exports = function (grunt) {
         dest: 'min/',
         ext: '.min.css'
       }
+    },
+    bump: {
+      options: {
+        files: ['package.json', 'bower.json', 'perfect-scrollbar.jquery.json'],
+        updateConfigs: ['pkg'],
+        commit: false,
+        createTag: false,
+        push: false
+      }
     }
   });
 
@@ -72,6 +76,7 @@ module.exports = function (grunt) {
   grunt.loadNpmTasks('grunt-contrib-clean');
   grunt.loadNpmTasks('grunt-contrib-csslint');
   grunt.loadNpmTasks('grunt-contrib-cssmin');
+  grunt.loadNpmTasks('grunt-bump');
 
   grunt.registerTask('default', 'List commands', function () {
     grunt.log.writeln("");
@@ -83,5 +88,9 @@ module.exports = function (grunt) {
   grunt.registerTask('lint', ['jshint', 'csslint']);
   grunt.registerTask('build', ['clean', 'uglify', 'cssmin']);
   grunt.registerTask('travis', ['lint']);
+  grunt.registerTask('release', 'Release a new version', function (arg) {
+    var bumpType = arg ? ':' + arg : '';
+    grunt.task.run(['lint', 'bump' + bumpType, 'build']);
+  });
 
 };
