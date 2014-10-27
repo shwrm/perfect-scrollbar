@@ -115,6 +115,12 @@
       var scrollbarYLeft = isScrollbarYUsingRight ? null : int($scrollbarYRail.css('left'));
       var railBorderYWidth = int($scrollbarYRail.css('borderTopWidth')) + int($scrollbarYRail.css('borderBottomWidth'));
 
+      var updateDelay = 250,
+          supportsOrientationChange = "onorientationchange" in window, 
+          orientationEvent = supportsOrientationChange ? "orientationchange" : "resize",
+          suppressResize = false,
+          suppressTimeout;
+
       function updateScrollTop(currentTop, deltaY) {
         var newTop = currentTop + deltaY;
         var maxTop = containerHeight - scrollbarYHeight;
@@ -709,6 +715,36 @@
         eventClassName = null;
       }
 
+      /**
+       * Event handler for device orientation change.
+       * Updates scrollbar.
+       * Also suppresses resize event handler for devices that fire orientationchange and resize event together (Android).
+       */
+      function handleOrientationChange() {
+        updateGeometry();
+
+        suppressResize = true;
+
+        // Just in case resize doesn't fire and reset suppressResize, reset "manually" after a timeout
+        clearTimeout(suppressTimeout);
+        suppressTimeout = setTimeout(function() {
+          suppressResize = false;
+        },updateDelay*2);
+      }
+
+      /**
+       * Event handler for resize.
+       * Updates scrollbar, unless resize event was fired immediately after orientationchange (for devices that fire orientationchange and resize event together).
+       */
+      function handleResize() {
+        if (suppressResize) {
+          suppressResize = false;
+          clearTimeout(suppressTimeout);
+          return;
+        }
+        updateGeometry();
+      }
+
       var supportsTouch = (('ontouchstart' in window) || window.DocumentTouch && document instanceof window.DocumentTouch);
       var supportsIePointer = window.navigator.msMaxTouchPoints !== null;
 
@@ -730,7 +766,8 @@
         $this.data('perfect-scrollbar-update', updateGeometry);
         $this.data('perfect-scrollbar-destroy', destroy);
 
-        $(window).on('resize', typeof $.debounce === "function" ? $.debounce(250,function(){$this.perfectScrollbar('update');}) : function(){$this.perfectScrollbar('update');} );
+        $(window).on('orientationchange', typeof $.debounce === "function" ? $.debounce(updateDelay,handleOrientationChange) : handleOrientationChange );
+        $(window).on('resize',            typeof $.debounce === "function" ? $.debounce(updateDelay,handleResize) : handleResize );
       }
 
       initialize();
