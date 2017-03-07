@@ -193,6 +193,10 @@
       }
 
       function updateGeometry() {
+        if(!eventClassName) {
+          // Suppress updating destroyed scrollbars
+          return;
+        }
         // Hide scrollbars not to affect scrollWidth and scrollHeight
         $scrollbarXRail.hide();
         $scrollbarYRail.hide();
@@ -576,7 +580,7 @@
           e.preventDefault();
         }
         function touchMove(e) {
-          if (!inGlobalTouch && e.originalEvent.targetTouches.length === 1) {
+          if (!inGlobalTouch && e.originalEvent.targetTouches && e.originalEvent.targetTouches.length === 1) {
             var touch = getTouch(e);
 
             var currentOffset = {pageX: touch.pageX, pageY: touch.pageY};
