@@ -116,7 +116,7 @@
       var railBorderYWidth = int($scrollbarYRail.css('borderTopWidth')) + int($scrollbarYRail.css('borderBottomWidth'));
 
       var updateDelay = 250,
-          supportsOrientationChange = "onorientationchange" in window, 
+          supportsOrientationChange = "onorientationchange" in window,
           orientationEvent = supportsOrientationChange ? "orientationchange" : "resize",
           suppressResize = false,
           suppressTimeout;
@@ -199,6 +199,10 @@
       }
 
       function updateGeometry() {
+        if(!eventClassName) {
+          // Suppress updating destroyed scrollbars
+          return;
+        }
         // Hide scrollbars not to affect scrollWidth and scrollHeight
         $scrollbarXRail.hide();
         $scrollbarYRail.hide();
@@ -573,7 +577,7 @@
           inLocalTouch = true;
           // reset speed
           speed = {};
-          
+
           var touch = getTouch(e);
 
           startOffset.pageX = touch.pageX;
@@ -587,7 +591,7 @@
 
         }
         function touchMove(e) {
-          if (!inGlobalTouch && e.originalEvent.targetTouches.length === 1) {
+          if (!inGlobalTouch && e.originalEvent.targetTouches && e.originalEvent.targetTouches.length === 1) {
             var touch = getTouch(e);
 
             var currentOffset = {pageX: touch.pageX, pageY: touch.pageY};
